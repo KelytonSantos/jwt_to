@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.jwt.jwt.entities.User;
 import com.jwt.jwt.repositories.UserRepository;
+import com.jwt.jwt.service.TokenService;
 
 @RestController
 @RequestMapping("/auth")
@@ -24,19 +25,23 @@ public class AuthenticationController {
     @Autowired
     private UserRepository repo;
 
+    @Autowired
+    private TokenService tokenService;
+
     @PostMapping("/login")
     public ResponseEntity login(@RequestBody @Validated AuthenticationDTO data) {
 
         var usernamePassword = new UsernamePasswordAuthenticationToken(data.login(), data.password());
         var auth = this.authenticationManager.authenticate(usernamePassword);
 
-        return ResponseEntity.ok().build();
+        var token = tokenService.generateToken((User) auth.getPrincipal());
+
+        return ResponseEntity.ok(new LoginResponseDTO(token));
     }
 
     @PostMapping("/register")
     public ResponseEntity register(@RequestBody @Validated RegisterDTO data) {
-
-        if (repo.findById(data.login()) != null) {
+        if (repo.findByLogin(data.login()) != null) {
             return ResponseEntity.badRequest().build();
         }
 
